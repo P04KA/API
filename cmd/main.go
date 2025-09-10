@@ -1,9 +1,11 @@
 package main
 
 import (
-	"context"
 	"os"
 
+	"log/slog"
+
+	"github.com/P04KA/API.git/internal/storage"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,10 +19,6 @@ type User struct {
 }
 
 var conn *pgxpool.Pool
-
-func handler(c *fiber.Ctx) error {
-	return c.SendString("Test")
-}
 
 func getHandler(c *fiber.Ctx) error {
 	id := c.Params("id")
@@ -86,22 +84,15 @@ func putHandler(c *fiber.Ctx) error {
 	})
 }
 
-func GetConnect() {
-	var err error
-	conn, err = pgxpool.New(context.Background(), "postgresql://user1:password@172.18.0.2:5432/db")
-	if err != nil {
-		println("Can't connect to DB", err.Error())
-		os.Exit(1)
-	}
-}
-
 func main() {
 	app := fiber.New()
-
-	GetConnect()
+	// Глянуть про указатели
+	conn, err := storage.GetConnect("postgresql://postgres:postgres@postgres:5432/postgres")
+	if err != nil {
+		slog.Error("db conn", slog.Any("error", err))
+		os.Exit(1)
+	}
 	defer conn.Close()
-
-	app.Get("/", handler)
 
 	app.Get("/user/:id", getHandler)
 
@@ -111,6 +102,7 @@ func main() {
 
 	app.Delete("/user/:id", deleteHandler)
 	if err := app.Listen(":3000"); err != nil {
+		//log ошибки
 		os.Exit(1)
 	}
 

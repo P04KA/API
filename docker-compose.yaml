@@ -1,32 +1,32 @@
-version: "3.9"
+
 services:
   postgres:
     image: postgres:14.8-alpine3.18
     environment:
-      POSTGRES_DB: "db"
-      POSTGRES_USER: "user1"
-      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user1 -d db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    restart: unless-stopped
+
   app:
     build:
       context: .
       dockerfile: build/package/dockerfile.api
     ports:
       - "3000:3000"
-    depends_on:
-      - postgres
+    #depends_on:
+   #   codition:                   # добавить кондитион для хелтх чека
+   #     - postgres
 
 volumes:
   postgres_data:
