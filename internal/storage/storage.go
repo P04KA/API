@@ -12,5 +12,8 @@ func GetConnect(connStr string) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "pgx conn")
 	}
+	if err := conn.Ping(context.Background()); err != nil {
+		return nil, errors.Wrap(err, "conn ping")
+	}
 	return conn, nil
 }
