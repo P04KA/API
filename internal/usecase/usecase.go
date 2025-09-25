@@ -39,7 +39,7 @@ func (u *UseCase) UpdateUser(ctx context.Context, user models.User) error {
 	err := u.userRepo.UpdateUser(ctx, user)
 
 	if err != nil && err.Error() == "user not found" {
-		return errors.New("user not found") // Возвращаем ту же ошибку, но гарантируем ее наличие
+		return errors.New("user not found")
 	}
 	return err
 }
