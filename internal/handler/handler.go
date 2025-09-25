@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/P04KA/API.git/internal/models"
-	"github.com/P04KA/API.git/internal/usecase"
+	"github.com/P04KA/API/internal/models"
+	"github.com/P04KA/API/internal/usecase"
 	"github.com/gofiber/fiber/v2"
 )
 

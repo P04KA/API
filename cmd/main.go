@@ -5,7 +5,7 @@ import (
 
 	"log/slog"
 
-	"github.com/P04KA/API.git/internal/app"
+	"github.com/P04KA/API/internal/app"
 )
 
 func main() {

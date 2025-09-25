@@ -1,4 +1,4 @@
-module github.com/P04KA/API.git
+module github.com/P04KA/API
 
 go 1.25.1
 

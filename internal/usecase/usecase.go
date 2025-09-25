@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/P04KA/API.git/internal/models"
-	"github.com/P04KA/API.git/internal/repository"
+	"github.com/P04KA/API/internal/models"
+	"github.com/P04KA/API/internal/repository"
 	"github.com/go-playground/validator"
 	"github.com/google/uuid"
 )

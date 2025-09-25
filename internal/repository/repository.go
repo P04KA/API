@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/P04KA/API.git/internal/models"
+	"github.com/P04KA/API/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
