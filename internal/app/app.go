@@ -29,7 +29,7 @@ func Run() error {
 	handle := handler.New(uc)
 	app := getRouter(handle)
 
-	if err := app.Listen(":3000"); err != nil {
+	if err := app.Listen(":8080"); err != nil {
 		return errors.Wrap(err, "start app")
 	}
 	return nil
