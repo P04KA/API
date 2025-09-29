@@ -2,67 +2,43 @@ package usecase
 
 import (
 	"context"
-	"errors"
 
 	"github.com/P04KA/API/internal/models"
 	"github.com/P04KA/API/internal/repository"
-	"github.com/go-playground/validator"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 )
 
 type UseCase struct {
-	userRepo *repository.UserRepo
-	validate *validator.Validate
+	userRepo repository.UserProvider
 }
 
-func New(userRepo *repository.UserRepo) *UseCase {
+func New(userRepo repository.UserProvider) *UseCase {
 	return &UseCase{
 		userRepo: userRepo,
-		validate: validator.New(),
 	}
 }
 
 func (u *UseCase) CreateUser(ctx context.Context, user models.User) (string, error) {
-	if err := u.validate.Struct(user); err != nil {
-		return "", errors.New("validate fail")
-	}
+
 	return u.userRepo.CreateUser(ctx, user)
 }
 
 func (u *UseCase) UpdateUser(ctx context.Context, user models.User) error {
-	if err := u.validate.Struct(user); err != nil {
-		return errors.New("validate fail")
-	}
-	if _, err := uuid.Parse(user.ID); err != nil {
-		return errors.New("invalid user")
-	}
-	err := u.userRepo.UpdateUser(ctx, user)
-
-	if err != nil && err.Error() == "user not found" {
-		return errors.New("user not found")
-	}
-	return err
+	return u.userRepo.UpdateUser(ctx, user)
 }
 
 func (u *UseCase) GetUser(ctx context.Context, id string) (*models.User, error) {
 	if _, err := uuid.Parse(id); err != nil {
-		return nil, errors.New("invalid user")
+		return nil, errors.Wrap(err, "get user")
 	}
-	user, err := u.userRepo.GetUser(ctx, id)
-	if err != nil {
-		return nil, errors.New("user not found") // Преобразуем ошибку БД в бизнес-ошибку
-	}
-	return user, nil
+	return u.userRepo.GetUser(ctx, id)
 }
 
 func (u *UseCase) DeleteUser(ctx context.Context, id string) error {
 	if _, err := uuid.Parse(id); err != nil {
-		return errors.New("invalid user")
+		return errors.Wrap(err, "delete user")
 	}
+	return u.userRepo.DeleteUser(ctx, id)
 
-	err := u.userRepo.DeleteUser(ctx, id)
-	if err != nil && err.Error() == "user not found" {
-		return errors.New("user not found")
-	}
-	return err
 }

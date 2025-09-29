@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func GetRouter(handle *handler.Handle) *fiber.App {
+func getRouter(handle *handler.Handle) *fiber.App {
 	app := fiber.New()
 
 	app.Get("/user/:id", handle.GetHandler)

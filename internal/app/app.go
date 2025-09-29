@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/P04KA/API/database"
+	"github.com/P04KA/API/internal/cache"
 	"github.com/P04KA/API/internal/handler"
 	"github.com/P04KA/API/internal/repository"
 	"github.com/P04KA/API/internal/storage"
@@ -23,9 +24,10 @@ func Run() error {
 	defer conn.Close()
 
 	userRepo := repository.New(conn)
-	uc := usecase.New(userRepo)
+	cacheDecorator := cache.NewDecorator(userRepo)
+	uc := usecase.New(cacheDecorator)
 	handle := handler.New(uc)
-	app := GetRouter(handle)
+	app := getRouter(handle)
 
 	if err := app.Listen(":3000"); err != nil {
 		return errors.Wrap(err, "start app")
