@@ -20,7 +20,6 @@ func NewDecorator(repo repository.UserProvider) *CacheDecorator {
 	}
 }
 
-// методы такие же как в repo
 func (c *CacheDecorator) GetUser(ctx context.Context, id string) (*models.User, error) {
 
 	if user, ok := c.user[id]; ok {

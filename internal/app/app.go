@@ -12,7 +12,6 @@ import (
 
 func Run() error {
 
-	// Глянуть про указатели
 	if err := database.Migrate("postgresql://postgres:postgres@postgres:5432/postgres"); err != nil {
 		return errors.Wrap(err, "migrate")
 	}
