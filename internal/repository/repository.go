@@ -19,14 +19,14 @@ func New(conn *pgxpool.Pool) *UserRepo {
 	return &UserRepo{conn: conn}
 }
 
-func (r *UserRepo) CreateUser(ctx context.Context, user models.User) (string, error) {
+func (r *UserRepo) CreateUser(ctx context.Context, user models.User) (*models.User, error) {
 	user.ID = uuid.New().String()
 	_, err := r.conn.Exec(ctx, "INSERT INTO users (id, name, age, country) VALUES ($1, $2, $3, $4)", user.ID, user.Name, user.Age, user.Country)
 	if err != nil {
-		return "", errors.Wrap(err, "insert user")
+		return nil, errors.Wrap(err, "insert user")
 	}
 
-	return user.ID, nil
+	return &user, nil
 }
 
 func (r *UserRepo) GetUser(ctx context.Context, id string) (*models.User, error) {

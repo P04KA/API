@@ -1,6 +1,9 @@
 package app
 
 import (
+	"time"
+
+	"github.com/P04KA/API/config"
 	"github.com/P04KA/API/database"
 	"github.com/P04KA/API/internal/cache"
 	"github.com/P04KA/API/internal/handler"
@@ -11,19 +14,23 @@ import (
 )
 
 func Run() error {
+	cfg, err := config.LoadConfig(".")
+	if err != nil {
+		return errors.Wrap(err, "cfg load")
+	}
 
-	if err := database.Migrate("postgresql://postgres:postgres@postgres:5432/postgres"); err != nil {
+	if err := database.Migrate(cfg.DB.DBURL); err != nil {
 		return errors.Wrap(err, "migrate")
 	}
 
-	conn, err := storage.GetConnect("postgresql://postgres:postgres@postgres:5432/postgres")
+	conn, err := storage.GetConnect(cfg.DB.DBURL)
 	if err != nil {
 		return errors.Wrap(err, "Connect")
 	}
 	defer conn.Close()
 
 	userRepo := repository.New(conn)
-	cacheDecorator := cache.NewDecorator(userRepo)
+	cacheDecorator := cache.NewDecorator(10*time.Minute, 1*time.Minute, userRepo)
 	uc := usecase.New(cacheDecorator)
 	handle := handler.New(uc)
 	app := getRouter(handle)

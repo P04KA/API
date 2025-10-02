@@ -6,8 +6,8 @@ import (
 	"github.com/P04KA/API/internal/models"
 )
 
-type UserUseCase interface {
-	CreateUser(ctx context.Context, user models.User) (string, error)
+type UserProvider interface {
+	CreateUser(ctx context.Context, user models.User) (*models.User, error)
 	GetUser(ctx context.Context, id string) (*models.User, error)
 	UpdateUser(ctx context.Context, user models.User) error
 	DeleteUser(ctx context.Context, id string) error

@@ -23,6 +23,9 @@
       depends_on:
         postgres:
           condition: service_healthy
+      volumes:
+      - ./config:/app/config:ro 
+      working_dir: /app
 
   volumes:
     postgres_data:

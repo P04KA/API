@@ -19,7 +19,7 @@ func New(userRepo repository.UserProvider) *UseCase {
 	}
 }
 
-func (u *UseCase) CreateUser(ctx context.Context, user models.User) (string, error) {
+func (u *UseCase) CreateUser(ctx context.Context, user models.User) (*models.User, error) {
 
 	return u.userRepo.CreateUser(ctx, user)
 }

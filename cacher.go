@@ -19,7 +19,7 @@ type CacheDecorator struct {
 
 type cacheItem struct {
 	user      *models.User
-	updatedAt time.Time
+	expiresAt time.Time // когда запись устареет
 }
 
 func NewDecorator(defaultTTL, cleanupInterval time.Duration, repo repository.UserProvider) *CacheDecorator {
@@ -29,20 +29,23 @@ func NewDecorator(defaultTTL, cleanupInterval time.Duration, repo repository.Use
 		defaultTTL: defaultTTL,
 	}
 
-	go c.Cleanup(cleanupInterval)
+	// Запускаем очистку с тикером
+	go c.cleanupWithTicker(cleanupInterval)
 
 	return c
 }
 
-func (c *CacheDecorator) Cleanup(interval time.Duration) {
+// Очистка с тикером
+func (c *CacheDecorator) cleanupWithTicker(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
+
 	for {
-		<-ticker.C
+		<-ticker.C // ждем тик
 		c.mu.Lock()
 		now := time.Now()
 		for key, item := range c.user {
-			if now.After(item.updatedAt.Add(c.defaultTTL)) {
+			if now.After(item.expiresAt) {
 				delete(c.user, key)
 			}
 		}
@@ -55,21 +58,25 @@ func (c *CacheDecorator) GetUser(ctx context.Context, id string) (*models.User, 
 	item, ok := c.user[id]
 	c.mu.RUnlock()
 
-	if ok && time.Now().Before(item.updatedAt.Add(c.defaultTTL)) {
+	// Если есть в кэше и не устарел
+	if ok && time.Now().Before(item.expiresAt) {
 		return item.user, nil
 	}
 
+	// Если нет в кэше или устарел - берем из базы
 	user, err := c.userRepo.GetUser(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "get user from db")
 	}
 
+	// Сохраняем в кэш
 	c.mu.Lock()
 	c.user[id] = &cacheItem{
 		user:      user,
-		updatedAt: time.Now(),
+		expiresAt: time.Now().Add(c.defaultTTL),
 	}
 	c.mu.Unlock()
+
 	return user, nil
 }
 
@@ -80,12 +87,12 @@ func (c *CacheDecorator) CreateUser(ctx context.Context, user models.User) (*mod
 	}
 
 	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.user[createdUser.ID] = &cacheItem{
 		user:      createdUser,
-		updatedAt: time.Now(),
+		expiresAt: time.Now().Add(c.defaultTTL),
 	}
+	c.mu.Unlock()
+
 	return createdUser, nil
 }
 
@@ -96,12 +103,12 @@ func (c *CacheDecorator) UpdateUser(ctx context.Context, user models.User) error
 	}
 
 	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.user[user.ID] = &cacheItem{
 		user:      &user,
-		updatedAt: time.Now(),
+		expiresAt: time.Now().Add(c.defaultTTL),
 	}
+	c.mu.Unlock()
+
 	return nil
 }
 
@@ -112,7 +119,8 @@ func (c *CacheDecorator) DeleteUser(ctx context.Context, id string) error {
 	}
 
 	c.mu.Lock()
-
 	delete(c.user, id)
+	c.mu.Unlock()
+
 	return nil
 }

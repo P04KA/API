@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 
+	"github.com/P04KA/API/internal/apperr"
 	"github.com/P04KA/API/internal/models"
 	"github.com/P04KA/API/internal/usecase"
 	"github.com/go-playground/validator/v10"
@@ -10,24 +11,28 @@ import (
 )
 
 type Handle struct {
-	uc usecase.UserUseCase
+	uc usecase.UserProvider
 }
 
 var validate = validator.New()
 
-func New(uc usecase.UserUseCase) *Handle {
+func New(uc usecase.UserProvider) *Handle {
 	return &Handle{uc: uc}
 }
 func (h *Handle) GetHandler(c *fiber.Ctx) error {
 	id := c.Params("id")
 
+	if err := validate.Var(id, "uuid"); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid format"})
+	}
+
 	user, err := h.uc.GetUser(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, fiber.ErrBadRequest) {
+		if errors.Is(err, apperr.ErrNotFound) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user"})
 		}
-		if errors.Is(err, fiber.ErrNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+		if errors.Is(err, apperr.ErrNotFound) {
+			return apperr.ErrNotFound
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -43,15 +48,14 @@ func (h *Handle) PostHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	id, err := h.uc.CreateUser(c.Context(), user)
+	CreatedUser, err := h.uc.CreateUser(c.Context(), user)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Can't save user"})
 	}
 
-	user.ID = id
 	return c.JSON(fiber.Map{
 		"message": "User has been created",
-		"user":    id,
+		"user":    CreatedUser,
 	})
 }
 
@@ -60,14 +64,9 @@ func (h *Handle) DeleteHandler(c *fiber.Ctx) error {
 	err := h.uc.DeleteUser(c.Context(), id)
 
 	if err != nil {
-		if errors.Is(err, fiber.ErrBadRequest) {
+		if errors.Is(err, apperr.ErrNotFound) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "delete user"})
 		}
-
-		if errors.Is(err, fiber.ErrNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "usr not found, can't delete"})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
@@ -77,6 +76,7 @@ func (h *Handle) DeleteHandler(c *fiber.Ctx) error {
 }
 func (h *Handle) PutHandler(c *fiber.Ctx) error {
 	var user models.User
+
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
