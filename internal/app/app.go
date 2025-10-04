@@ -7,11 +7,10 @@ import (
 	"github.com/P04KA/API/database"
 	"github.com/P04KA/API/internal/cache"
 	"github.com/P04KA/API/internal/handler"
+	"github.com/P04KA/API/internal/metrics"
 	"github.com/P04KA/API/internal/repository"
 	"github.com/P04KA/API/internal/storage"
 	"github.com/P04KA/API/internal/usecase"
-	"github.com/gofiber/contrib/circuitbreaker"
-	"github.com/gofiber/fiber/v2"
 	"github.com/pkg/errors"
 )
 
@@ -37,29 +36,7 @@ func Run() error {
 	handle := handler.New(uc)
 	app := getRouter(handle)
 
-	cb := circuitbreaker.New(circuitbreaker.Config{
-		FailureThreshold: 3,
-		Timeout:          10 * time.Second,
-		OnOpen: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusServiceUnavailable).
-				JSON(fiber.Map{"error": "Circuit Open: Service unavailable"})
-		},
-		OnHalfOpen: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusTooManyRequests).
-				JSON(fiber.Map{"error": "Circuit Half-Open: Retrying service"})
-		},
-		OnClose: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusOK).
-				JSON(fiber.Map{"message": "Circuit Closed: Service recovered"})
-		},
-	})
-
-	app.Get("/user/:id", circuitbreaker.Middleware(cb), func(c *fiber.Ctx) error {
-		return c.SendString("Post and Update services is protected by a Circuit Breaker")
-	})
-	app.Get("/user", circuitbreaker.Middleware(cb), func(c *fiber.Ctx) error {
-		return c.SendString("Get and Delete is protected by a Circuit Breaker")
-	})
+	metrics.Register(metrics.Config{Enabled: true, Port: "8082"}, "")
 
 	if err := app.Listen(":8082"); err != nil {
 		return errors.Wrap(err, "start app")

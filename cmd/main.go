@@ -13,6 +13,5 @@ func main() {
 
 		slog.Error("run app", slog.Any("error", err))
 		os.Exit(1)
-		cb.Stop()
 	}
 }
