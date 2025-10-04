@@ -9,7 +9,6 @@ COPY vendor ./vendor
 
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o /main ./cmd/main.go
-EXPOSE 8082
 
 FROM alpine:3.13
 WORKDIR /

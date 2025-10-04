@@ -38,7 +38,7 @@ func Run() error {
 
 	metrics.Register(metrics.Config{Enabled: true, Port: "8082"}, "")
 
-	if err := app.Listen(":8082"); err != nil {
+	if err := app.Listen(":8080"); err != nil {
 		return errors.Wrap(err, "start app")
 	}
 	return nil
