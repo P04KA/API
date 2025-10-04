@@ -31,7 +31,7 @@ func LoadConfig(path string) (config Config, err error) {
 		return config, errors.Wrap(err, "reading env")
 	}
 
-	viper.SetDefault("http.port", 8080)
+	viper.SetDefault("http.port", 8082)
 	viper.AutomaticEnv()
 
 	if err := viper.Unmarshal(&config); err != nil {
