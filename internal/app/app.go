@@ -1,11 +1,13 @@
 package app
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/P04KA/API/config"
 	"github.com/P04KA/API/database"
 	"github.com/P04KA/API/internal/cache"
+	"github.com/P04KA/API/internal/grpc/server"
 	"github.com/P04KA/API/internal/handler"
 	"github.com/P04KA/API/internal/metrics"
 	"github.com/P04KA/API/internal/repository"
@@ -35,6 +37,13 @@ func Run() error {
 	uc := usecase.New(cacheDecorator)
 	handle := handler.New(uc)
 	app := getRouter(handle)
+	grpcServer := server.NewUserStatsServer(userRepo)
+
+	go func() {
+		if err := grpcServer.Run("50052"); err != nil {
+			slog.Error("gRPC server failed", slog.Any("error", err))
+		}
+	}()
 
 	metrics.Register(metrics.Config{Enabled: true, Port: "8082"}, "")
 

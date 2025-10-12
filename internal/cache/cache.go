@@ -116,3 +116,15 @@ func (c *CacheDecorator) DeleteUser(ctx context.Context, id string) error {
 	delete(c.user, id)
 	return nil
 }
+
+func (c *CacheDecorator) CountUserCreated(ctx context.Context, time time.Time) (int64, error) {
+	return c.userRepo.CountUserCreated(ctx, time)
+}
+
+func (c *CacheDecorator) CountUserUpdated(ctx context.Context, time time.Time) (int64, error) {
+	return c.userRepo.CountUserUpdated(ctx, time)
+}
+
+func (c *CacheDecorator) CountUserDeleted(ctx context.Context, time time.Time) (int64, error) {
+	return c.userRepo.CountUserDeleted(ctx, time)
+}

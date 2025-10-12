@@ -51,4 +51,5 @@ func Register(cfg Config, version string) {
 			slog.Error(fmt.Sprintf("monitoring.Server: %v", err), slog.Any("error", err))
 		}
 	}()
+	
 }

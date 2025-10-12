@@ -15,5 +15,7 @@ func getRouter(handle *handler.Handle) *fiber.App {
 	app.Put("/user", handle.PutHandler)
 
 	app.Delete("/user/:id", handle.DeleteHandler)
+
+	app.Get("/stats", handle.GetUserStats)
 	return app
 }

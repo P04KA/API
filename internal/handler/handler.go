@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/P04KA/API/internal/apperr"
+	"github.com/P04KA/API/internal/grpc/client"
 	"github.com/P04KA/API/internal/models"
 	"github.com/P04KA/API/internal/usecase"
 	"github.com/go-playground/validator/v10"
@@ -48,14 +49,14 @@ func (h *Handle) PostHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	CreatedUser, err := h.uc.CreateUser(c.Context(), user)
+	id, err := h.uc.CreateUser(c.Context(), user)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Can't save user"})
 	}
 
 	return c.JSON(fiber.Map{
 		"message": "User has been created",
-		"user":    CreatedUser,
+		"user":    id,
 	})
 }
 
@@ -92,5 +93,22 @@ func (h *Handle) PutHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "User has been updated ",
 		"user":    user,
+	})
+}
+
+// grpc
+func (h *Handle) GetUserStats(c *fiber.Ctx) error {
+	period := c.Query("period", "day")
+
+	resp, err := client.GetStats(c.Context(), period)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"users_created": resp.UsrCreated,
+		"users_updated": resp.UsrUpdated,
+		"users_deleted": resp.UsrDeleted,
+		"period":        resp.Period,
 	})
 }

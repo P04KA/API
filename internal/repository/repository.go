@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/P04KA/API/internal/apperr"
 	"github.com/P04KA/API/internal/models"
@@ -31,7 +32,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, user models.User) (*models.Us
 
 func (r *UserRepo) GetUser(ctx context.Context, id string) (*models.User, error) {
 	var user models.User
-	err := r.conn.QueryRow(ctx, "SELECT id, name, age, country FROM users WHERE id = $1", id).Scan(&user.ID, &user.Name, &user.Age, &user.Country)
+	err := r.conn.QueryRow(ctx, "SELECT id, name, age, country FROM users WHERE id = $1 AND deleted_at IS NULL", id).Scan(&user.ID, &user.Name, &user.Age, &user.Country)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apperr.ErrNotFound
 	}
@@ -43,7 +44,7 @@ func (r *UserRepo) GetUser(ctx context.Context, id string) (*models.User, error)
 }
 
 func (r *UserRepo) UpdateUser(ctx context.Context, user models.User) error {
-	rows, err := r.conn.Exec(ctx, "UPDATE users SET name = $2, age = $3, country = $4 WHERE id = $1", user.ID, user.Name, user.Age, user.Country)
+	rows, err := r.conn.Exec(ctx, "UPDATE users SET name = $2, age = $3, country = $4, updated_at = NOW() WHERE id = $1", user.ID, user.Name, user.Age, user.Country)
 	if err != nil {
 		return errors.Wrap(err, "update user")
 	}
@@ -53,7 +54,7 @@ func (r *UserRepo) UpdateUser(ctx context.Context, user models.User) error {
 	return nil
 }
 func (r *UserRepo) DeleteUser(ctx context.Context, id string) error {
-	rows, err := r.conn.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
+	rows, err := r.conn.Exec(ctx, "UPDATE users SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return errors.Wrap(err, "delete user")
 	}
@@ -62,4 +63,21 @@ func (r *UserRepo) DeleteUser(ctx context.Context, id string) error {
 		return apperr.ErrNotFound
 	}
 	return nil
+}
+func (r *UserRepo) CountUserCreated(ctx context.Context, time time.Time) (int64, error) {
+	var count int64
+	err := r.conn.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE created_at > $1 AND deleted_at IS NULL`, time).Scan(&count)
+	return count, err
+}
+
+func (r *UserRepo) CountUserUpdated(ctx context.Context, time time.Time) (int64, error) {
+	var count int64
+	err := r.conn.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE updated_at > $1 AND created_at != updated_at AND deleted_at IS NULL`, time).Scan(&count)
+	return count, err
+}
+
+func (r *UserRepo) CountUserDeleted(ctx context.Context, time time.Time) (int64, error) {
+	var count int64
+	err := r.conn.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE deleted_at > $1`, time).Scan(&count)
+	return count, err
 }
