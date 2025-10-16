@@ -5,7 +5,6 @@ ENV GOSUMDB=off
 
 WORKDIR /
 COPY go.mod go.sum ./
-RUN go mod vendor 
 COPY vendor ./vendor
 
 COPY . .

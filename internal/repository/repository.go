@@ -80,4 +80,10 @@ func (r *UserRepo) CountUserDeleted(ctx context.Context, time time.Time) (int64,
 	var count int64
 	err := r.conn.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE deleted_at > $1`, time).Scan(&count)
 	return count, err
+	//что будет возвращать queryRow, если нет записей. мб pgx вернется
 }
+
+//запилить новую репу statistics, там запускаю сервер, с соблюдение архитектуры user stats server - usecase, его надо запихнуть в internal/usecase. - Это сделали
+// в api gateway, клиент(убрать его в Handle и добавить зависимость по типу internal/usecase/stat.go)
+// stats.prorto запихнуть в каждый репозиторий
+//запилить новый репозиторий all-in-one, там пропаисать docker compose, который будет поднимать весь сервис/проект(там же конфиги для графаны)

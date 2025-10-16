@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/P04KA/API/internal/apperr"
-	"github.com/P04KA/API/internal/grpc/client"
 	"github.com/P04KA/API/internal/models"
 	"github.com/P04KA/API/internal/usecase"
 	"github.com/go-playground/validator/v10"
@@ -12,13 +11,17 @@ import (
 )
 
 type Handle struct {
-	uc usecase.UserProvider
+	uc      usecase.UserProvider
+	statsUC usecase.StatsUseCase
 }
 
 var validate = validator.New()
 
-func New(uc usecase.UserProvider) *Handle {
-	return &Handle{uc: uc}
+func New(uc usecase.UserProvider, statsUC usecase.StatsUseCase) *Handle {
+	return &Handle{
+		uc:      uc,
+		statsUC: statsUC,
+	}
 }
 func (h *Handle) GetHandler(c *fiber.Ctx) error {
 	id := c.Params("id")
@@ -100,7 +103,7 @@ func (h *Handle) PutHandler(c *fiber.Ctx) error {
 func (h *Handle) GetUserStats(c *fiber.Ctx) error {
 	period := c.Query("period", "day")
 
-	resp, err := client.GetStats(c.Context(), period)
+	resp, err := h.statsUC.GetStats(c.Context(), period)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
