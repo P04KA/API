@@ -19,18 +19,9 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath(".")
 
-	// Пытаемся прочитать конфиг, но не падаем если его нет
-	if err := viper.ReadInConfig(); err != nil {
-		// Просто логируем, но продолжаем
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Конфиг файл не найден - используем значения по умолчанию
-		}
-	}
-
 	viper.SetDefault("http.port", 8080)
 	viper.SetDefault("db.dburl", "postgresql://postgres:postgres@postgres:5432/postgres")
 
-	// Переменные окружения имеют приоритет
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("API")
 	viper.BindEnv("db.dburl", "DB_URL")
