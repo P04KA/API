@@ -1,0 +1,55 @@
+package app
+
+import (
+	"time"
+
+	"github.com/P04KA/API/config"
+	"github.com/P04KA/API/database"
+	"github.com/P04KA/API/internal/cache"
+	"github.com/P04KA/API/internal/grpc/client"
+	"github.com/P04KA/API/internal/handler"
+	"github.com/P04KA/API/internal/metrics"
+	"github.com/P04KA/API/internal/repository"
+	"github.com/P04KA/API/internal/storage"
+	"github.com/P04KA/API/internal/usecase"
+	"github.com/pkg/errors"
+)
+
+func Run() error {
+	cfg, err := config.LoadConfig(".")
+	if err != nil {
+		return errors.Wrap(err, "cfg load")
+	}
+
+	if err := database.Migrate(cfg.DB.DBURL); err != nil {
+		return errors.Wrap(err, "migrate")
+	}
+
+	conn, err := storage.GetConnect(cfg.DB.DBURL)
+	if err != nil {
+		return errors.Wrap(err, "Connect")
+	}
+	defer conn.Close()
+
+	userRepo := repository.New(conn)
+	cacheDecorator := cache.NewDecorator(10*time.Minute, 1*time.Minute, userRepo)
+	uc := usecase.New(cacheDecorator)
+
+	statsClient, err := client.New("statistics-service:5052")
+	if err != nil {
+		return errors.Wrap(err, "create stats client")
+	}
+	defer statsClient.Close()
+
+	statsUC := usecase.NewStatsUsecase(statsClient)
+	handle := handler.New(uc, statsUC)
+	app := getRouter(handle)
+
+	metrics.Register(metrics.Config{Enabled: true, Port: "8082"}, "")
+
+	if err := app.Listen(":8080"); err != nil {
+		return errors.Wrap(err, "start app")
+	}
+	return nil
+
+}

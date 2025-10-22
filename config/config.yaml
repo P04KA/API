@@ -1,0 +1,4 @@
+http:
+  port: 8080
+db:
+  dburl: "postgresql://postgres:postgres@postgres:5432/postgres"
